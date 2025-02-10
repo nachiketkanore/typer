@@ -8,18 +8,30 @@ use crossterm::{
     ExecutableCommand,
 };
 use rand::Rng;
-use std::time::{Duration, Instant};
+use random_word::Lang;
 use std::{
     io::{self, Write},
     thread::sleep,
 };
+use std::{
+    process::exit,
+    time::{Duration, Instant},
+};
 
-fn generate_sentence(length: usize) -> String {
+fn generate_sentence(mut words: usize) -> String {
     let mut rng = rand::rng();
-    let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz ".chars().collect();
-    (0..length)
-        .map(|_| chars[rng.random_range(0..chars.len())])
-        .collect()
+    let mut sentence = String::new();
+    while words > 0 {
+        let word_length = rng.random_range(2..=10);
+        if let Some(word) = random_word::gen_len(word_length, Lang::En) {
+            words -= 1;
+            sentence.push_str(word);
+            if words > 0 {
+                sentence.push_str(" ");
+            }
+        }
+    }
+    sentence
 }
 
 fn print_stats(typed_text: String, original_text: String) {
@@ -31,8 +43,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     stdout.execute(EnterAlternateScreen)?; // Enter alternate screen for better display
     terminal::enable_raw_mode()?; // Enable raw mode for character-by-character input
 
-    let sentence_length = 50;
-    let sentence = generate_sentence(sentence_length);
+    let words_count = 20;
+    let sentence = generate_sentence(words_count);
     let mut typed_string = String::new();
     let mut start_time: Option<Instant> = None;
 
@@ -107,36 +119,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 mod tests {
     use crate::generate_sentence;
     use crossterm::event::{Event, KeyCode};
+    use random_word::Lang;
     use std::io::Write;
     use std::time::Duration;
     use std::{io, thread};
 
     #[test]
-    fn test_sentence_generation() {
-        let sentence = generate_sentence(20);
-        assert_eq!(sentence.len(), 20);
-        for c in sentence.chars() {
-            assert!(c.is_ascii_alphabetic() || c == ' '); // Check for valid characters
-        }
+    fn test_sentence_generation_word_count() {
+        assert_eq!(generate_sentence(0).len(), 0);
+        assert_eq!(generate_sentence(20).split(' ').count(), 20);
+        assert_eq!(generate_sentence(100).split(' ').count(), 100);
+    }
 
-        let sentence2 = generate_sentence(0);
-        assert_eq!(sentence2.len(), 0);
-
-        let sentence3 = generate_sentence(100);
-        assert_eq!(sentence3.len(), 100);
-        for c in sentence3.chars() {
-            assert!(c.is_ascii_alphabetic() || c == ' '); // Check for valid characters
+    #[test]
+    fn test_sentence_generation_valid_characters() {
+        for c in generate_sentence(100).chars() {
+            assert!(c.is_ascii_alphabetic() || c == ' ');
         }
     }
 
     #[test]
-    fn test_backspace() {
-        let mut typed_string = String::from("hello");
-        typed_string.pop();
-        assert_eq!(typed_string, "hell");
-
-        typed_string.pop();
-        typed_string.pop();
-        assert_eq!(typed_string, "he");
+    fn test_word_generation_upto_word_length_10() {
+        for word_length in 2..=10 {
+            assert!(random_word::gen_len(word_length, Lang::En).is_some());
+        }
     }
 }
