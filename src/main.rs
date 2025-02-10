@@ -43,7 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     stdout.execute(EnterAlternateScreen)?; // Enter alternate screen for better display
     terminal::enable_raw_mode()?; // Enable raw mode for character-by-character input
 
-    let words_count = 20;
+    let words_count = 1;
     let sentence = generate_sentence(words_count);
     let mut typed_string = String::new();
     let mut start_time: Option<Instant> = None;
@@ -106,10 +106,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let minutes = elapsed.as_secs_f64() / 60.0;
     let wpm = (typed_string.len() as f64 / 5.0) / minutes;
 
-    println!("\nGame Over!");
-    println!("Final WPM: {:.2}", wpm);
+    println!("Game Finished! Final WPM: {:.2}", wpm);
+    println!("original text: {}", sentence);
+    println!("typed text: {}", typed_string);
+    println!("Exiting in {}sec", 5);
+    io::stdout().flush().unwrap();
+    std::thread::sleep(Duration::from_secs(5));
 
-    sleep(Duration::from_secs(5));
     terminal::disable_raw_mode()?; // Disable raw mode
     stdout.execute(LeaveAlternateScreen)?; // Leave alternate screen
     Ok(())
